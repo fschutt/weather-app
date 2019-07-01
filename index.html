@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JQuery Weather API Example</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        .noscript--normal {
+            display: block;
+            background: linear-gradient(red, #e22);
+            color: white;
+            padding: 5px 10px;
+        }
+
+        body, html {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .site_content--normal {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 10px;
+        }
+
+        content {
+            margin: 10px 0px;
+        }
+
+        .user_input--normal input {
+            border: none;
+            outline: none;
+            border-bottom: 1px solid blue;
+            font-size: 1.4em;
+        }
+
+        button[type="submit"] {
+            user-select: none;
+        }
+
+        .user_input--normal button {
+            background: red;
+            padding: 10px;
+            border: none;
+            outline: none;
+            border-radius: 10px;
+            margin: 10px;
+            font-size: 1.2em;
+            color: white;
+            cursor: pointer;
+        }
+
+        .user_input--normal button:hover {
+            background: blue;
+        }
+
+        .user_input--normal button:active {
+            background: green;
+        }
+
+        footer {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <noscript>
+        <div class="noscript--normal theme--light">
+            This site is best viewed with JS enabled!
+        </div>
+    </noscript>
+    <div class="site_content--normal theme--light">
+        <header>
+            <h1>Weather App</h1>
+        </header>
+        <content>
+            <div class="user_input--normal theme--light">
+                <input tabindex="1" type="text" id="weather_location_input--normal" />
+                <button tabindex="1" onclick="on_button_search_click()">Search</button>
+            </div>
+            <div id="weather_output--normal" class="theme--light"></div>
+        </content>
+        <footer>
+            <p>(C) fschutt 2019</p>
+        </footer>
+    </div>
+    <script type="text/javascript" src="./jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+        'use strict';
+
+        class CityData {
+            constructor(city, degrees) {
+                this.city = city;
+                this.degrees = degrees;
+            }
+        }
+
+        const weatherApiUrl = "https://api.openweathermap.org/data/2.5/weather";
+        const outputHtmlId = "#weather_output--normal";
+        const inputTextId = "#weather_location_input--normal";
+        const apiKey = "bb407cad59c25899262d7edd3b440c98";
+
+        // Renders a CityData model into a HTML node
+        //
+        // @inputs "htmlSelector": String = Selector where the data model
+        // should be rendered into, such as "#id"
+        // @inputs "cityData": CityData = data to render in the UI
+        //
+        // @returns void
+        function render_data_model(htmlSelector, cityData) {
+            let string = "The weather in " + cityData.city + " is currently " + cityData.degrees + " degrees Celsius.";
+            $(htmlSelector).html("<p>" + string + "</p>");
+        }
+
+        // Does an AJAX call to fetch the weather
+        // from weather.com
+        //
+        // @inputs "searchTerm": String = City or location to query
+        // weather.com for, such as "Frankfurt" or "Berlin"
+        //
+        // @returns Object:
+        //     - { ok: CityData} on success
+        //     - { err: { error_message, error_code } } on error
+        function fetch_weather_data(searchText) {
+            let apiUrl = construct_weather_url(searchText);
+            $.ajax({
+              dataType: "jsonp",
+              url: apiUrl,
+              success: function(weatherJson) {
+                  console.log(weatherJson);
+                  let cityData = get_degrees_from_weather_api(weatherJson);
+                  render_data_model(outputHtmlId, cityData);
+              }
+            });
+        }
+
+        // Constructs the query URL for the location data
+        //
+        // @returns String: the final URL
+        function construct_weather_url(cityLocation) {
+            return weatherApiUrl + "?q=" + cityLocation + "&APPID=" + apiKey;
+        }
+
+        // Filters the weather.com API results to only get the "degrees"
+        //
+        // @inputs "apiJson": String = JSON response from weather API
+        //
+        // @returns CityData (city + degrees)
+        function get_degrees_from_weather_api(apiJson) {
+
+            // Convert Kelvin to Celsius
+            //
+            // @returns float: The celcius
+            function kelvin_to_celsius(kelvin) {
+                return kelvin - 273.15;
+            }
+
+            let cityName = apiJson.name; // "London"
+            let cityTemp = apiJson.main.temp; // "289.92"
+            let cityTempDegrees = Math.round(kelvin_to_celsius(cityTemp) * 10) / 10; // round to first digit
+            return new CityData(cityName, cityTempDegrees);
+        }
+
+        // Event listener for a click on the "search" button
+        function on_button_search_click() {
+
+            let searchText = $(inputTextId).val();
+
+            if (searchText == undefined || searchText === "") {
+                return;
+            }
+
+            console.log("test");
+            fetch_weather_data(searchText);
+        }
+    </script>
+</body>
+</html>
